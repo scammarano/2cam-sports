@@ -1,0 +1,45 @@
+name: Validate and package local Sports
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm run check
+      - run: npm test
+      - name: Install browser test tools
+        if: matrix.node == 24
+        run: npm install --no-save --package-lock=false playwright@1.58.2
+      - name: Install Chromium
+        if: matrix.node == 24
+        run: npx playwright install --with-deps chromium
+      - name: Verify browser operation and disconnection
+        if: matrix.node == 24
+        run: node scripts/browser-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.node == 24
+        with:
+          name: sports-browser-screenshots
+          path: sports-*.png
+          if-no-files-found: ignore
+      - name: Package local technical preview
+        if: matrix.node == 24
+        run: zip -r 2cam-sports-0.1.0-local.zip src public docs test scripts package.json README.md .gitignore
+      - uses: actions/upload-artifact@v4
+        if: matrix.node == 24
+        with:
+          name: 2cam-sports-0.1.0-local
+          path: 2cam-sports-0.1.0-local.zip
+          retention-days: 30
