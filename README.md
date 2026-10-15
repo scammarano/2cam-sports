@@ -1,8 +1,10 @@
 # 2Cam Sports · 0.1.0 · S0
 
-## APK de control Android 0.2.0
+## Fire y tablet sin computadora · Control Android 0.3.0
 
-Se incorpora el cliente nativo en `android/` y el workflow **Build Android control APK**. Usa el servicio local 0.1.0 existente; no cambia su API. Ver [instalación y prueba en tablet](docs/ANDROID_TEST.md). Descargar únicamente el artifact de una ejecución aprobada. El ZIP Node y el APK Android son entregables distintos.
+La operación es **tablet → APK Digital Signage/Sports en Fire**, sobre LAN. El Fire contiene el componente independiente `native-core`, guarda y confirma los puntos. No requiere computadora ni Node. Ver [instalación y prueba](docs/ANDROID_TEST.md). Incluye búsqueda mDNS y dirección manual alternativa (puerto Fire 8989).
+
+La entrega Node S0 descrita abajo queda como banco técnico opcional, no como requisito de uso.
 
 Primera entrega técnica ejecutable: motor de tenis/pádel, pistas, encuentros, visor web y controles locales. **No es todavía el portal completo ni una APK.** No requiere paquetes npm externos.
 

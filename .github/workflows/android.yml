@@ -62,13 +62,13 @@ jobs:
       - name: Package verified APK
         run: |
           mkdir -p delivery
-          cp android/app/build/outputs/apk/debug/app-debug.apk delivery/2cam-sports-control-0.2.0-test.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk delivery/2cam-sports-control-0.3.0-test.apk
           cp docs/ANDROID_TEST.md delivery/LEEME.md
           cd delivery
-          sha256sum 2cam-sports-control-0.2.0-test.apk > SHA256SUMS.txt
+          sha256sum 2cam-sports-control-0.3.0-test.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: 2cam-sports-control-0.2.0-test-APK
+          name: 2cam-sports-control-0.3.0-test-APK
           path: delivery/
           retention-days: 30
       - uses: actions/upload-artifact@v4
