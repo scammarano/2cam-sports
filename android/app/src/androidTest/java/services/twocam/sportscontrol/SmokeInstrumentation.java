@@ -19,7 +19,7 @@ public class SmokeInstrumentation extends Instrumentation {
     private View find(View v,String tag){if(tag.equals(v.getTag()))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=find(g.getChildAt(i),tag);if(found!=null)return found;}}return null;}
     private View view(String tag){return find(activity.getWindow().getDecorView(),tag);}
     private void waitFor(String tag,String contains) throws Exception{long end=System.currentTimeMillis()+15000;while(System.currentTimeMillis()<end){final boolean[] ok={false};runOnMainSync(()->{View v=view(tag);ok[0]=v!=null&&(contains==null||(v instanceof TextView&&((TextView)v).getText().toString().contains(contains)));});if(ok[0])return;Thread.sleep(100);}throw new AssertionError("No apareció "+tag+" / "+contains);}
-    private void click(String tag){runOnMainSync(()->{View v=view(tag);if(v==null||!v.isEnabled())throw new AssertionError("Botón no disponible: "+tag);v.performClick();});}
+    private void click(String tag)throws Exception{long end=System.currentTimeMillis()+10000;while(System.currentTimeMillis()<end){final boolean[] ready={false};runOnMainSync(()->{View v=view(tag);ready[0]=v!=null&&v.isEnabled();if(ready[0])v.performClick();});if(ready[0])return;Thread.sleep(100);}throw new AssertionError("Botón no disponible: "+tag);}
     private JSONObject post(String path,JSONObject body)throws Exception{return new JSONObject(ApiClient.request(base,path,admin,body,null));}
     private void exercise()throws Exception{
         if(!Endpoint.normalize("192.168.1.4:8787/",true).equals("http://192.168.1.4:8787"))throw new AssertionError("Normalización");
@@ -47,9 +47,27 @@ public class SmokeInstrumentation extends Instrumentation {
         // Salir y abrir de nuevo fuerza lectura del token cifrado en AndroidKeyStore.
         runOnMainSync(()->activity.finish());waitForIdleSync();
         activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitFor("connection","Conectado");waitFor("scoreA","15");
-        click("undo");waitForIdleSync();runOnMainSync(()->{if(activity.testUndoDialog==null)throw new AssertionError("Confirmación de corrección");activity.testUndoDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();});waitFor("scoreA","0");
+        // Simula respuesta perdida: el servidor ya aplicó el comando, pero quedó pendiente en la tablet.
+        SecureSession secure=new SecureSession(getTargetContext());JSONObject binding=new JSONObject(secure.load());
+        JSONObject body=new JSONObject().put("type","point").put("side",1).put("expectedVersion",2);
+        String key="android-lost-response-test";
+        ApiClient.request(base,"/screens/"+screen.getString("id")+"/commands",binding.getString("token"),body,key);
+        binding.put("pending",new JSONObject().put("key",key).put("body",body));secure.save(binding.toString());
+        runOnMainSync(()->activity.finish());waitForIdleSync();
+        activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitFor("connection","Conectado");waitFor("scoreB","15");click("retry");
+        long end=System.currentTimeMillis()+10000;while(new JSONObject(secure.load()).has("pending")&&System.currentTimeMillis()<end)Thread.sleep(100);
+        if(new JSONObject(secure.load()).has("pending"))throw new AssertionError("No resolvió la operación pendiente");
+        waitFor("connection","Conectado");waitFor("scoreB","15");
+        click("undo");waitForIdleSync();runOnMainSync(()->{if(activity.testUndoDialog==null)throw new AssertionError("Confirmación de corrección");activity.testUndoDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick();});waitFor("scoreB","0");
         String raw=ApiClient.request(base,"/screens/"+screen.getString("id")+"/snapshot",screen.getString("displayToken"),null,null);
-        if(new JSONObject(raw).getJSONObject("match").getInt("version")!=3)throw new AssertionError("Versión esperada tras punto y undo");
+        if(new JSONObject(raw).getJSONObject("match").getInt("version")!=4)throw new AssertionError("Se duplicó una operación al verificar");
+        // Servicio inaccesible: el marcador queda sin permisos para sumar puntos.
+        JSONObject good=new JSONObject(secure.load());JSONObject offline=new JSONObject(good.toString()).put("base","http://127.0.0.1:9");
+        runOnMainSync(()->activity.finish());waitForIdleSync();secure.save(offline.toString());
+        activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitFor("connection","Desconectado");
+        runOnMainSync(()->{if(view("pointA").isEnabled())throw new AssertionError("Punto habilitado sin conexión");});
+        runOnMainSync(()->activity.finish());waitForIdleSync();secure.save(good.toString());
+        activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitFor("connection","Conectado");waitFor("scoreA","15");
         new SecureSession(getTargetContext()).clear();runOnMainSync(()->activity.finish());
     }
 }
