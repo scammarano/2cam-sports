@@ -4,3 +4,9 @@ data/
 .env
 coverage/
 sports-*.png
+android/.gradle/
+android/local.properties
+android/**/build/
+*.keystore
+*.jks
+delivery/
