@@ -1,5 +1,9 @@
 # 2Cam Sports · 0.1.0 · S0
 
+## APK de control Android 0.2.0
+
+Se incorpora el cliente nativo en `android/` y el workflow **Build Android control APK**. Usa el servicio local 0.1.0 existente; no cambia su API. Ver [instalación y prueba en tablet](docs/ANDROID_TEST.md). Descargar únicamente el artifact de una ejecución aprobada. El ZIP Node y el APK Android son entregables distintos.
+
 Primera entrega técnica ejecutable: motor de tenis/pádel, pistas, encuentros, visor web y controles locales. **No es todavía el portal completo ni una APK.** No requiere paquetes npm externos.
 
 ## Ejecutar
