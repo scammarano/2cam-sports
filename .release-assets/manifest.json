@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "product": "2cam-apk",
+  "platform": "sports-control",
+  "package": "services.twocam.sportscontrol",
+  "version_name": "0.3.0-test",
+  "version_code": 3,
+  "min_sdk": 23,
+  "channel": "debug",
+  "certificate_sha256": "7bd01e3921783cbbad9e09214d2857a75208a71c56215c219217c101829af7e0",
+  "size": 33125,
+  "sha256": "3acaf8319e56128e74e63941a1365630eeeaab8e9d9c9d656bccc124e7ec76f1",
+  "source_commit": "e59b4141046f7a6b35a25bfa26c28097fe209751",
+  "source_workflow_run": 38778477403,
+  "notes": "Sports Control 0.3.0 de pruebas: teléfono/tablet Android6+ controla directamente el marcador Sports de Digital Signage en Fire TV por LAN. Descubrimiento mDNS, emparejamiento por código, roles y operaciones idempotentes. CI y emulador API29 verificados; latencia y descubrimiento en hardware/red física pendientes. Es el control, no una APK para Fire OS5/API22. No se ha cambiado la firma del artefacto original. Actualizador de esta app y clave de firma permanente protegida aún pendientes."
+}
