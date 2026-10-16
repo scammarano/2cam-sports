@@ -29,6 +29,7 @@ public class MainActivity extends Activity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ExecutorService network = Executors.newSingleThreadExecutor();
     private SecureSession secure;
+    private LanDiscovery lanDiscovery;
     private JSONObject session, snapshot;
     private LinearLayout root, screenList, score;
     private TextView status, message, title;
@@ -44,7 +45,7 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
-        secure = new SecureSession(this);
+        secure = new SecureSession(this); lanDiscovery = new LanDiscovery(this);
         String loadError = null;
         try { String value = secure.load(); if (value != null) { session = new JSONObject(value); Endpoint.normalize(session.getString("base"), BuildConfig.DEBUG); } }
         catch (Exception e) { session = null; secure.clear(); loadError = "No se pudo recuperar el enlace cifrado. Vuelve a enlazar; el administrador puede liberar el cupo anterior."; }
@@ -52,7 +53,7 @@ public class MainActivity extends Activity {
         if (loadError != null) message.setText(loadError);
     }
     @Override protected void onStart() { super.onStart(); active = true; if (live) poll(); }
-    @Override protected void onStop() { super.onStop(); active = false; connected = false; busy = false; pollInFlight = false; generation++; handler.removeCallbacks(pollTask); if (pointA != null) buttons(); }
+    @Override protected void onStop() { super.onStop(); lanDiscovery.stop(); active = false; connected = false; busy = false; pollInFlight = false; generation++; handler.removeCallbacks(pollTask); if (pointA != null) buttons(); }
     @Override protected void onDestroy() { super.onDestroy(); network.shutdownNow(); handler.removeCallbacksAndMessages(null); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private TextView text(String value, int size, int color) {
@@ -78,15 +79,16 @@ public class MainActivity extends Activity {
         network.execute(() -> { try { String value = task.run(); handler.post(() -> { if (isFinishing() || version != generation || !active) return; try { result.done(value); } catch (Exception e) { error.accept(e); } }); }
             catch (Exception e) { handler.post(() -> { if (!isFinishing() && version == generation && active) error.accept(e); }); } });
     }
-    private String readable(Exception e) { return e instanceof ApiClient.Failure ? e.getMessage() : "No se pudo conectar. Revisa la dirección, el Wi-Fi y que el servicio local esté encendido."; }
+    private String readable(Exception e) { return e instanceof ApiClient.Failure ? e.getMessage() : "No se pudo conectar. Revisa el Wi-Fi, la dirección y que Sports siga abierto en el Fire."; }
     private void showConnect() {
         live = false; layout("Conecta con tu sede");
-        text("Introduce la dirección del servicio local. La tablet y el servicio deben estar en la misma red.",16,MUTED);
+        text("Busca tu Fire en Wi-Fi o introduce la dirección que muestra su pantalla Sports. Ambos deben estar en la misma red.",16,MUTED);
         address = input("http://192.168.1.20:8787","serverAddress",root); address.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         String last = getPreferences(MODE_PRIVATE).getString("lastAddress", ""); address.setText(last);
-        button("Buscar pantallas Sports","discover",root,v -> discover());
+        button("Buscar pantallas en la dirección indicada","discover",root,v -> discover());
+        button("Buscar Fire TV en Wi-Fi","discoverLan",root,v -> { status.setText("Buscando pantallas Sports activas en la red…"); screenList.removeAllViews(); lanDiscovery.start((name,base) -> { if(!active||live)return; button(name,"lan-"+name,screenList,b -> { address.setText(base); lanDiscovery.stop(); discover(); }); }, error -> { if(active&&!live)status.setText(error); }); });
         screenList = new LinearLayout(this); screenList.setOrientation(LinearLayout.VERTICAL); root.addView(screenList);
-        text("0.2.0 · APK de prueba · Android 6 o superior\nEste control utiliza el servicio local Sports. La conexión con Digital Signage y la búsqueda automática de servicios en la red siguen pendientes.",13,MUTED);
+        text("0.3.0 · APK de prueba · Android 6 o superior\nEste control utiliza el servicio local Sports. Se conecta directamente con el modo Sports local de Digital Signage en el Fire. No necesita computadora.",13,MUTED);
     }
     private void discover() {
         final String base;

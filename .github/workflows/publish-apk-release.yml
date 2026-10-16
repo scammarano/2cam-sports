@@ -1,0 +1,26 @@
+name: Publish verified Sports APK
+on:
+  push:
+    branches: [feat/fire-direct-control]
+    paths: ['.release-assets/**', 'release-tools/publish_apk.py', '.github/workflows/publish-apk-release.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Verify original APK identity/signature and publish signed import envelope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 release-tools/publish_apk.py
